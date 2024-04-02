@@ -1,0 +1,48 @@
+<!--
+SPDX-FileCopyrightText: 2024 Swiss Confederation
+
+SPDX-License-Identifier: MIT
+-->
+
+<ul class="inner_list">
+    <li><b>Credential Type:</b> {{cred[0]['vc']['type']}}</li>
+    <li><b>Issuer:</b> {{cred[0]['vc']['issuer']}}</li>
+    <li><b>Holder:</b> {{cred[0]['vc']['credentialSubject']['id']}}</li>
+    <li><b>Revocation Index:</b> {{cred[0]['vc']['credentialStatus']['statusListIndex']}}</li>
+    <li><b>Valid From:</b> {{cred[0]['vc'].get('validFrom', "NA")}} (iat: {{cred[0]['iat']}})</li>
+    <li><b>Valid Until:</b> {{cred[0]['vc'].get('validUntil', "NA")}} (exp: {{cred[0].get('exp', "NA")}})</li>
+    <li><b>Data</b></li>
+    <ul>
+        {% if 'IdentityCredential' in cred[0]['vc']['type'] %}
+            {% for data in cred[0]['vc']['credentialSubject']['_sd'] %} 
+                <li>{{data}}</li>
+            {% endfor %}
+            <li><b>Address:</b></li>
+            <ul>
+                {% for data in cred[0]['vc']['credentialSubject']['address']['_sd'] %} 
+                <li>{{data}}</li>
+                {% endfor %}
+            </ul>
+        {% elif 'UniversityDegreeCredential' in cred[0]['vc']['type'] %}
+            {% for data in cred[0]['vc']['credentialSubject']['degree'].items() %}
+                <li><b>{{data[0]}}:</b> {{data[1]}}</li>
+            {% endfor %}
+        {% elif 'ELFA' in cred[0]['vc']['type'] %}
+            {% for data in cred[0]['vc']['credentialSubject'].items() %} 
+                <li><b>{{data[0]}}:</b> {{data[1]}}</li>
+            {% endfor %}
+        {% endif %}
+    </ul>
+    <br>
+    <li class="secrets">Holder Secrets
+        <ul>
+            {% for secret in cred[1] %}
+                {% if "Image" in secret[1] %}
+                    <li><b>{{secret[1]}}:</b> <img src="data:image/png;base64,{{secret[2]}}" alt="Image" width="200" height="200"></li>
+                {% else %}
+                    <li><b>{{secret[1]}}:</b> {{secret[2]}}</li>
+                {% endif %}
+            {% endfor %}
+        </ul>
+    </li>
+</ul>

@@ -1,0 +1,29 @@
+<!--
+SPDX-FileCopyrightText: 2024 Swiss Confederation
+
+SPDX-License-Identifier: MIT
+-->
+
+<ul class="inner_list">
+    <!-- <li>JWT ID: {{ cred['jti'] }}</li> -->
+    <li><b>Credential Type:</b> {{cred['vc']['type']}}</li>
+    <li><b>Issuer:</b> {{cred['vc']['issuer']}}</li>
+    <li><b>Holder:</b> {{cred['vc']['credentialSubject']['id']}}</li>
+    <li><b>Revocation Index:</b> {{cred['vc']['credentialStatus']['statusListIndex']}}</li>
+    <li><b>Data</b></li>
+    <ul>
+        {% if 'UniversityDegreeCredential' in cred['vc']['type'] %}
+            {% for data in cred['vc']['credentialSubject']['degree'].items() %}
+                <li><b>{{data[0]}}:</b> {{data[1]}}</li>
+            {% endfor %}
+        {% elif 'ELFA' in cred['vc']['type'] %}
+            {% for data in cred['vc']['credentialSubject'].items() %} 
+                {% if "Image" in data[0] %}
+                    <li><b>{{data[0]}}:</b> <img src="data:{{data[1]['mime']}};base64,{{data[1]['data']}}" alt="Image" width="200" height="200"></li>
+                {% else %}
+                    <li><b>{{data[0]}}:</b> {{data[1]}}</li>
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+    </ul>
+</ul>

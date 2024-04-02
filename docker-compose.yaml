@@ -1,0 +1,299 @@
+# SPDX-FileCopyrightText: 2024 Swiss Confederation
+#
+# SPDX-License-Identifier: MIT
+
+version: "3.3"
+services:
+  issuer:
+    depends_on:
+      db_issuer:
+        condition: service_healthy
+    build: 
+      dockerfile: ./Dockerfile
+      context: ./
+      args:
+        component: issuer
+        poetry_dependency_groups: main,asgi,database,comms,jwt,hsm,html
+        install_softhsm: installit
+    networks:
+      - oid4vc_local
+    ports: 
+      - 8000:443
+    volumes:
+      # Mount HSM connection
+      - ./softhsm2.conf:/app/softhsm2.conf
+      - ./cert/hsm:/app/cert/hsm
+      # - ./${HSM_LIBRARY}:/app/${HSM_LIBRARY}
+      # Cert Files
+      - ./cert/issuer:/app/cert
+      - ./issuer:/app/issuer
+      - ./common:/app/common
+    command: 
+      [
+        "--host", "0.0.0.0",
+        "--port", "443",
+        "--reload",
+        "--ssl-keyfile=./cert/rsa_private.pem",
+        "--ssl-certfile=./cert/rsa_public.pem",
+        "--forwarded-allow-ips", "*"]
+    environment:
+     - ENABLE_DEBUG_MODE=True
+     - REGISTRY_BASE_URL=https://registry_base
+     - REGISTRY_BASE_API_KEY=${REGISTRY_BASE_API_KEY}
+     - REGISTRY_REVOCATION_URL=https://registry_revocation
+     - REGISTRY_REVOCATION_API_KEY=${REGISTRY_REVOCATION_API_KEY}
+     - EXTERNAL_URL=https://issuer
+     - API_KEY=tergum_dev_key
+     - DB_CONNECTION=postgresql://postgres:mysecretpassword@db_issuer/issuer
+     - ISSUER_ID=${ISSUER_ID} # comes from .env file
+     - STATUS_LIST_CONFIG=${STATUS_LIST_CONFIG}
+     - LOG_LEVEL=${LOG_LEVEL}
+     # HSM Environment Variables
+     - SOFTHSM2_CONF=/app/softhsm2.conf # Location where softhsm2.conf has been copied to
+     - HSM_LIBRARY=/usr/lib/softhsm/libsofthsm2.so # Location of HSM library in alpine
+     - HSM_TOKEN=${HSM_TOKEN}
+     - HSM_PIN=${HSM_PIN}
+     - HSM_LABEL=${HSM_LABEL}
+     - HSM_SIGNING_ALGORITHM=${HSM_SIGNING_ALGORITHM}
+     - APP_NAME=issuer
+  
+  verifier:
+    depends_on:
+      - registry_base
+      - registry_revocation
+    build: 
+      dockerfile: ./Dockerfile
+      context: ./
+      args:
+        component: verifier
+        poetry_dependency_groups: main,asgi,comms,jwt,redis,dif
+    networks:
+      - oid4vc_local
+    ports: 
+      - 8001:443
+    volumes:
+      - ./cert/verifier:/app/cert
+      - ./verifier:/app/verifier
+      - ./common:/app/common
+    command: 
+      [
+        "--host", "0.0.0.0",
+        "--port", "443",
+        "--reload",
+        "--ssl-keyfile=./cert/rsa_private.pem",
+        "--ssl-certfile=./cert/rsa_public.pem",
+        "--forwarded-allow-ips", "*"]
+    environment:
+     - ENABLE_DEBUG_MODE=True
+     - REGISTRY_BASE_URL=https://registry_base/issuer
+     - REGISTRY_REVOCATION_URL=https://registry_revocation/issuer
+     - EXTERNAL_URL=https://verifier
+     - API_KEY=tergum_dev_key
+     - LOG_LEVEL=${LOG_LEVEL}
+     - APP_NAME=verifier
+
+  admin:
+    depends_on:
+      db_base:
+        condition: service_healthy
+      db_revocation:
+        condition: service_healthy
+    build: 
+      dockerfile: ./Dockerfile
+      context: ./
+      args:
+        component: admin
+        poetry_dependency_groups: main,asgi,database,jwt
+    networks:
+      - oid4vc_local
+    ports: 
+      - 1337:443
+    volumes:
+      - ./cert/admin:/app/cert
+      - ./admin:/app/admin
+      - ./common:/app/common
+    environment:
+      - ENABLE_DEBUG_MODE=True
+      - DB_CONNECTION_BASE=postgresql://postgres:mysecretpassword@db_base/registry
+      - DB_CONNECTION_REVOCATION=postgresql://postgres:mysecretpassword@db_revocation/registry
+      - API_KEY=tergum_dev_key
+      - LOG_LEVEL=${LOG_LEVEL}
+      - APP_NAME=admin
+    command:
+      [
+        "--host", "0.0.0.0",
+        "--port", "443",
+        "--reload",
+        "--ssl-keyfile=./cert/rsa_private.pem",
+        "--ssl-certfile=./cert/rsa_public.pem",
+        "--forwarded-allow-ips",
+        "*"
+      ]
+
+
+  registry_base:
+    depends_on:
+      db_base:
+        condition: service_healthy
+    build: 
+      dockerfile: ./Dockerfile
+      context: ./
+      args:
+        component: registry_base
+        poetry_dependency_groups: main,asgi,database,jwt
+    networks:
+      - oid4vc_local
+    ports: 
+      - 8010:443
+    volumes:
+      - ./cert/registry_base:/app/cert
+      - ./registry_base:/app/registry_base
+      - ./common:/app/common
+    environment:
+      - ENABLE_DEBUG_MODE=True
+      - DB_CONNECTION=postgresql://postgres:mysecretpassword@db_base/registry
+      - LOG_LEVEL=${LOG_LEVEL}
+      - API_KEY=${REGISTRY_BASE_API_KEY}
+      - APP_NAME=registry_base
+      - USE_HTTPS=False
+    command:
+      [
+        "--host", "0.0.0.0",
+        "--port", "443",
+        "--reload",
+        "--ssl-keyfile=./cert/rsa_private.pem",
+        "--ssl-certfile=./cert/rsa_public.pem",
+        "--forwarded-allow-ips",
+        "*"
+      ]
+
+  registry_revocation:
+    depends_on:
+      db_revocation:
+        condition: service_healthy
+    build: 
+      dockerfile: ./Dockerfile
+      context: ./
+      args:
+        component: registry_revocation
+        poetry_dependency_groups: main,asgi,database,jwt,comms
+    networks:
+      - oid4vc_local
+    ports: 
+      - 8011:443
+    volumes:
+      - ./cert/registry_revocation:/app/cert
+      - ./registry_revocation:/app/registry_revocation
+      - ./common:/app/common
+    environment:
+     - ENABLE_DEBUG_MODE=True
+     - REGISTRY_BASE_URL=https://registry_base
+     - DB_CONNECTION=postgresql://postgres:mysecretpassword@db_revocation/registry
+     - LOG_LEVEL=${LOG_LEVEL}
+     - API_KEY=${REGISTRY_REVOCATION_API_KEY}
+     - APP_NAME=registry_revocation
+    command:
+      [
+        "--host", "0.0.0.0",
+        "--port", "443",
+        "--reload",
+        "--ssl-keyfile=./cert/rsa_private.pem",
+        "--ssl-certfile=./cert/rsa_public.pem",
+        "--forwarded-allow-ips",
+        "*"
+      ]
+
+  db_base:
+    image: postgres
+    networks:
+      - oid4vc_local
+    ports: 
+      - 5432:5432
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=mysecretpassword
+      - POSTGRES_DB=registry
+    volumes:
+      - registry_base_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  db_revocation:
+    image: postgres
+    networks:
+      - oid4vc_local
+    ports: 
+      - 5433:5432
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=mysecretpassword
+      - POSTGRES_DB=registry
+    volumes:
+      - registry_revocation_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  db_issuer:
+    image: postgres
+    networks:
+      - oid4vc_local
+    ports: 
+      - 5434:5432
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=mysecretpassword
+      - POSTGRES_DB=issuer
+    volumes:
+      - issuer_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+# ######################
+# Web Wallet
+# ######################
+
+  wallet:
+    build: 
+      dockerfile: ./Dockerfile
+      context: ./
+      args:
+        component: wallet
+        poetry_dependency_groups: main,asgi,comms,jwt,html,hsm
+    networks:
+      - oid4vc_local
+    ports: 
+      - 443:443
+    volumes:
+      - ./cert/wallet:/app/cert
+      - ./wallet/:/app/wallet
+      - ./common:/app/common
+      - ./wallet_data:/app/wallet_data:rw
+    environment:
+      - ENABLE_DEBUG_MODE=True
+      - APP_NAME=wallet
+    command: 
+      [
+        "--host", "0.0.0.0",
+        "--port", "443",
+        "--reload",
+        "--ssl-keyfile=./cert/rsa_private.pem",
+        "--ssl-certfile=./cert/rsa_public.pem",
+        "--forwarded-allow-ips", "*"]
+
+volumes:
+  registry_base_data:
+  registry_revocation_data:
+  issuer_data:
+
+networks:
+  oid4vc_local:
+    name: oid4vc_local_dev

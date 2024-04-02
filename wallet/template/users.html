@@ -1,0 +1,39 @@
+<!--
+SPDX-FileCopyrightText: 2024 Swiss Confederation
+
+SPDX-License-Identifier: MIT
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Dummy Wallet - User Selection</title>
+</head>
+<body style="background-color: lightslategray;">
+    <style>
+        .users {
+            list-style-type: none;
+        }
+        li {
+            margin: 2em; 
+            margin-right: 5em;
+            padding: 1em;
+            background-color: whitesmoke;
+            border-radius: 1em;
+            font-family: 'Helvetica';
+        }
+    </style>
+    <form method="post">
+        <label>Identifier</label>
+        <input type="text" name="user_name"/>
+        <button type="submit">Create new User</button>
+    </form>
+    <ul class="users">
+        {% for user in users %}
+        <a href="data/{{ user }}">
+        <li class="user_entry">{{ user }} </li>
+        </a>
+        {% endfor %}
+    </ul>
+</body>
+</html> 

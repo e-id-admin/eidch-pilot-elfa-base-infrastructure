@@ -1,0 +1,37 @@
+<!--
+SPDX-FileCopyrightText: 2024 Swiss Confederation
+
+SPDX-License-Identifier: MIT
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Dummy Wallet - Verification</title>
+</head>
+<body style="background-color: lightslategray;">
+    {% include "header.html" %}
+    {% if verification_status == 200 %}
+    <div class="status_ok">✓</div>
+    {% else %}
+    <div class="status_nok">✗</div>
+    {% endif %}
+    <h1>Verification Used Credential</h1>
+    <ul class="creds_list">
+        <!-- JWT -->
+        {% for cred in jwt_creds %}
+        <li class="outer_list"><em>{{ cred['jti'] }}</em>
+            {% include "jwt.html" %}
+        </li>
+        {% endfor %}
+        
+
+        <!-- SD-JWT -->
+        {% for cred in sd_jwt_creds %}
+        <li class="outer_list"><em>{{ cred[0]['jti'] }}</em>
+            {% include "sd_jwt.html" %}
+        </li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

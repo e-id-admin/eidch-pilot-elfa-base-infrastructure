@@ -1,0 +1,48 @@
+<!--
+SPDX-FileCopyrightText: 2024 Swiss Confederation
+
+SPDX-License-Identifier: MIT
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <script type="text/javascript">
+      function getMobileOperatingSystem() {
+        var userAgent = navigator.userAgent || navigator.vendor || window.opera;
+
+        // Windows Phone must come first because its UA also contains "Android"
+        if (/windows phone/i.test(userAgent)) {
+          return "Windows Phone";
+        }
+
+        if (/android/i.test(userAgent)) {
+          return "Android";
+        }
+
+        if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) {
+          return "iOS";
+        }
+
+        return "unknown";
+      }
+      // Redirect Logic
+      var os = getMobileOperatingSystem()
+      if (os == "Android") {
+        window.location.href = "market://launch?id=ch.admin.foitt.pilotwallet";
+      } else if (os == "iOS") {
+        window.location.href = "itms-apps://itunes.apple.com/app/id6478277720";
+      } else {
+        window.location.href = "https://apps.apple.com/app/id6478277720";
+      }
+
+    </script>
+  </head>
+
+  <body>
+    <!-- Only seen if no javascript -->
+    <div>Javascript redirect does not work...</div>
+  </body>
+
+</html>

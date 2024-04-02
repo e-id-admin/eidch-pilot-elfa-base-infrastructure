@@ -1,0 +1,26 @@
+# SPDX-FileCopyrightText: 2024 Swiss Confederation
+#
+# SPDX-License-Identifier: MIT
+
+[tool.poetry]
+name = "common"
+version = "3.1.0"
+description = ""
+authors = ["FOITT Dev <eid@bit.admin.ch>"]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+sd-jwt = {git = "https://github.com/openwallet-foundation-labs/sd-jwt-python"}
+jwcrypto = "^1.5.1"
+python-multipart = "^0.0.7"
+jsonpath-ng = "^1.6.1"
+# Database ORM
+sqlalchemy = "^2.0.25"
+# PostgreSQL connector, used by sqlalchemy for PostgresSQL
+psycopg2 = "^2.9.9"
+python-pkcs11 = "^0.7.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

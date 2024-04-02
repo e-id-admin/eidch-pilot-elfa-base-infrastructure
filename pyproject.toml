@@ -1,0 +1,82 @@
+# SPDX-FileCopyrightText: 2024 Swiss Confederation
+#
+# SPDX-License-Identifier: MIT
+
+[tool.poetry]
+name = "openid-poc"
+version = "0.1.0"
+description = "Development Environment for OID4VC PoC. The dependencies in here are *all* dependencies combined"
+authors = ["FOITT Dev <eid@bit.admin.ch>"]
+readme = "readme.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+common = {path = "common", develop = true}
+
+[tool.poetry.group.asgi.dependencies]
+# ASGI Server
+uvicorn = "^0.27.0"
+fastapi = "^0.110.0"
+# ASGI Server Form Data
+python-multipart = "^0.0.7"
+# Logging
+asgi-correlation-id = "^4.3.0"
+# Allowing uvicorn to use --env flag
+python-dotenv = "^1.0.1"
+
+[tool.poetry.group.database.dependencies]
+# Database ORM
+sqlalchemy = "^2.0.25"
+# PostgreSQL connector, used by sqlalchemy for PostgresSQL
+psycopg2 = "^2.9.9"
+# Database Versioning
+alembic = "^1.13.1"
+
+[tool.poetry.group.redis.dependencies]
+# Cache for Verifier
+fakeredis = "^2.21.0"
+# Dependency for 
+async-timeout = "^4.0.3"
+
+[tool.poetry.group.comms.dependencies]
+# REST calles between services (eg calls to base registry)
+httpx = "^0.27.0"
+
+[tool.poetry.group.dif.dependencies]
+# JSON Path syntax for DIF
+jsonpath-ng = "^1.6.1"
+
+
+[tool.poetry.group.jwt.dependencies]
+# JWT Library (also used in sd-jwt)
+jwcrypto = "^1.5.6"
+# Official implementation of SD-JWT
+sd-jwt = {git = "https://github.com/openwallet-foundation-labs/sd-jwt-python"}
+# Bitarray as used with Status List
+bitarray = "^2.9.2"
+
+
+[tool.poetry.group.hsm.dependencies]
+# HSM connection
+python-pkcs11 = "^0.7.0"
+# Backbone of jwcrypot. HSM JWT implementation of ours uses utils which are not available anymore in >=42
+cryptography = "42.0.4"
+
+
+[tool.poetry.group.html.dependencies]
+# Server Side Rendering
+jinja2 = "^3.1.3"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.1.1"
+pytest-order = "^1.2.0"
+# Loads environment variables form pytest.ini 
+# Needed mostly for HSM integration so environment variable
+# for hsm conf is set correctly
+pytest-env = "^1.1.3"
+deepdiff = "^6.7.1"
+reuse = "^3.0.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
