@@ -36,7 +36,7 @@ def t_session() -> typing.Generator[db.Session, None, None]:
     Override function Database Injection using the docker compose base registry postgres db
     """
     session = db.session(
-        db_connection_string="postgresql://postgres:mysecretpassword@localhost:5432/registry",
+        db_connection_string="postgresql://postgres:mysecretpassword@localhost:5435/registry",
         db_schema="openid4vc",
     )
     try:

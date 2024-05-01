@@ -58,6 +58,9 @@ class KeyConfiguration:
         self.public_jwk = jwk.JWK.from_pem(public_key.encode())
         self.private_jwk = jwk.JWK.from_pem(private_key.encode())
 
+    def get_pk(self):
+        return self._public_key
+
     def encode_jwt(self, payload: dict, header: dict = None) -> str:
         """
         typ: vc+sd-jwt for sd-jwts
@@ -146,12 +149,15 @@ class HardwareSecurityModuleKeyConfiguration(KeyConfiguration):
         if self._session:
             self._session.close()
 
-    def _load_public_jwk(self) -> tuple[str, jwk.JWK]:
-        """Loads the public key from the HSM, returing public key jwk"""
-        hsm_pk: pkcs11.types.PublicKey = self._session.get_key(
+    def get_pk(self) -> pkcs11.constants.ObjectClass.PUBLIC_KEY:
+        return self._session.get_key(
             label=self._key_label,
             object_class=pkcs11.constants.ObjectClass.PUBLIC_KEY,
         )
+
+    def _load_public_jwk(self) -> tuple[str, jwk.JWK]:
+        """Loads the public key from the HSM, returing public key jwk"""
+        hsm_pk = self.get_pk()
         openssl_pk_der = pkcs11.util.ec.encode_ec_public_key(hsm_pk)
         # we now have the bytes of the public key (DER format)
         openssl_cert = ssl.DER_cert_to_PEM_cert(openssl_pk_der)

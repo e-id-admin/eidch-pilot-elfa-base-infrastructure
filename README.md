@@ -24,7 +24,7 @@ This proof of concept serves as a SSI-Showcase with OID4VC with a small set of f
 
 6.5 million people in Switzerland have a driving licence and 600'000 licences are being issued each year. asa (Association des services des automobiles/Vereinigung der Strassenverkehrsämter) wants to introduce a digital driving licence and digital vehicle registration documents in the future.
 
-In a first step [asa](https://asa.ch/) onboards a small group of drivers - the learning drivers - in Appenzell Ausserrhoden. As soon as this group passes the theoretical exam, they will get a digital proof called eLFA (*e*lektronischer *L*ern*F*ahr*A*usweis). With this digital driving licence, they are allowed to drive a car accompanied by another driver. This proof is stored in a mobile application (wallet, link to [Android](https://github.com/e-id-admin/eidch-pilot-android-wallet) and [iOS Repo](https://github.com/e-id-admin/eidch-pilot-android-wallet)). The police and driving instructors are trained to be able to verify the digital driving licence.
+In a first step [asa](https://asa.ch/) onboards a small group of drivers - the learning drivers - in Appenzell Ausserrhoden. As soon as this group passes the theoretical exam, they will get a digital proof called eLFA (*e*lektronischer *L*ern*F*ahr*A*usweis). With this digital driving licence, they are allowed to drive a car accompanied by another driver. This proof is stored in a mobile application (wallet, link to [Android](https://github.com/e-id-admin/eidch-pilot-android-wallet) and [iOS Repo](https://github.com/e-id-admin/eidch-pilot-ios-wallet)). The police and driving instructors are trained to be able to verify the digital driving licence.
 
 The E-ID Program is setup due to new [regulation for electronic identity](https://www.fedlex.admin.ch/eli/fga/2023/2843/de). In order to develop a trust infrastructure based on new technologies, several pilots have been launched - one of which is the eLFA.
 
@@ -77,23 +77,51 @@ Component details:
 
 ## Project Setup
 
-### Install general dependencies
-> The package requirements written below are **ubuntu specific**  and may not necessarily have an direct equivalent in other distributions
-The follwing dependencies need to be installed before running the project, to assure compability:
+> [!NOTE]
+> The package requirements and instructions written below are **ubuntu specific** and were tested in WSL. In other distributions the packages and installations can be different.
+
+### Prerequisites to start environment (not suitable for development)
+
+In order to start the environment install:
+
+- docker >= 24.0.7
+- python >= 3.11.7
+- python3.11-venv
+- libpq-dev
+- jq
+
+**Installation**
+
+To install python 3.11 and docker please follow the instructions on the respective pages.
+
+``` bash
+sudo apt install jq libpq-dev python3.11-venv -y
+```
+
+### Prerequisites for development
+
+In order to start the environment install:
+
 - docker >= 24.0.7
 - python >= 3.11.7
 - python3.11-dev
 - python3.11-venv
 - libpq-dev
 - jq
-- postgresql
 - build-essential
 
-**Install command**
+**Installation**
+
+To install python 3.11 and docker please follow the instructions on the respective pages.
 
 ``` bash
-sudo apt install jq postgresql build-essential libpq-dev python3.11-dev python3.11-venv -y
+sudo apt install jq build-essential libpq-dev python3.11-dev python3.11-venv -y
 ```
+
+### Setup and Start environment
+
+> [!IMPORTANT]
+> The setup script needs to be run as a non-root user. Check whether the current user is actually in the docker group, to run docker as a non-root user
 
 **Check docker group assignment**   
 The setup script needs to be run as a non-root user. Check wether the current user is actually in the docker group, to run docker as a non-root user
@@ -101,6 +129,7 @@ The setup script needs to be run as a non-root user. Check wether the current us
 > $ groups
 <group 1> <group 2> docker
 ```
+
 ### Setup environment
 To initially setup the environment, there is the follwing convenience script. Be aware that the initial run might **take up to 5 minutes**
 ````bash
@@ -185,7 +214,7 @@ e212ae97477f   ssi_openid-poc-verifier              "/app/.venv/bin/uvic…"   5
 70e711fc0a57   ssi_openid-poc-registry_revocation   "/app/.venv/bin/uvic…"   5 hours ago   Up 5 hours             8080/tcp, 0.0.0.0:8011->443/tcp, :::8011->443/tcp   ssi_openid-poc-registry_revocation-1
 de36d9107367   postgres                             "docker-entrypoint.s…"   5 hours ago   Up 5 hours (healthy)   0.0.0.0:5434->5432/tcp, :::5434->5432/tcp           ssi_openid-poc-db_issuer-1
 78e831aa0e3b   ssi_openid-poc-wallet                "/app/.venv/bin/uvic…"   5 hours ago   Up 5 hours             0.0.0.0:443->443/tcp, :::443->443/tcp, 8080/tcp     ssi_openid-poc-wallet-1
-238b822d3817   postgres                             "docker-entrypoint.s…"   5 hours ago   Up 5 hours (healthy)   0.0.0.0:5432->5432/tcp, :::5432->5432/tcp           ssi_openid-poc-db_base-1
+238b822d3817   postgres                             "docker-entrypoint.s…"   5 hours ago   Up 5 hours (healthy)   0.0.0.0:5435->5432/tcp, :::5435->5432/tcp           ssi_openid-poc-db_base-1
 c6f2e5888c61   postgres                             "docker-entrypoint.s…"   5 hours ago   Up 5 hours (healthy)   0.0.0.0:5433->5432/tcp, :::5433->5432/tcp           ssi_openid-poc-db_revocation-1
 ```
 Now that the python venv has been built, you have to activate it
@@ -195,13 +224,16 @@ source .venv/bin/activate
 
 ### How to use in local development mode
 
+If you have already run the setup_environment.sh script then start at point 3 or 2 if you have stopped the containers for example with docker compose down.
+
 1. execute setup_environment.sh
     * This performs the onboarding in your docker compose environment
-1. docker compose up 
-1. navigate to https://localhost:8000/docs for issuer
-1. check /health/ for problems
+2. docker compose up 
+3. navigate to https://localhost:8000/docs for issuer
+3. check /health/ for problems
     * metadata needs to be set via /oid4vc/admin/metadata 
     * first time status list must be initialized by issuer with /admin/status-list
+
 
 ### While coding
 When there is an incoming change, you might need to reset the environment based on the severity of the changes

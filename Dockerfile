@@ -52,7 +52,7 @@ RUN pip uninstall -y pip setuptools
 
 # install nessecary runtime dependencies
 # libpq-dev => DB access
-RUN apk add libpq-dev=16.2-r0
+RUN apk add libpq-dev=16.2-r1
 
 # Install packages required for hsm access
 RUN apk add libstdc++ gcompat opensc

@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: MIT
 
 """This file defines the custom health checks for the application."""
-
 import logging
 
 import httpx as req
@@ -15,6 +14,7 @@ from sqlalchemy.orm import Session
 import issuer.db.status_list as sl_db
 import issuer.db.metadata as metadata_db
 import issuer.config as conf
+import common.key_configuration as key
 
 _logger = logging.getLogger(__name__)
 
@@ -35,10 +35,17 @@ class ReadinessHealthResponse(health.ReadinessHealthResponseWithDBInject):
     base_registry_connectivity: health.HealthStatus = health.HealthStatus.unhealthy
 
 
+class LivelinessHealthResponse(health.base.HealthResponse):
+    """Response body model for health request operation."""
+
+    public_key_is_available: health.HealthStatus = health.HealthStatus.unhealthy
+
+
 class IssuerHealthAPIRouter(health.HealthAPIRouterWithDBInject):
     def __init__(self) -> None:
         super().__init__(
             readiness_response_model=ReadinessHealthResponse,
+            liveness_response_model=LivelinessHealthResponse,
             debug_response_model=DebugHealthResponse,
         )
 
@@ -74,6 +81,39 @@ class IssuerHealthAPIRouter(health.HealthAPIRouterWithDBInject):
             response,
             config,
             session,
+        )
+
+    def _build_liveness_probe(
+        self,
+        result: LivelinessHealthResponse,
+        response: Response,
+        config: conf.IssuerConfig,
+        key_conf: key.KeyConfiguration,
+    ) -> LivelinessHealthResponse:
+        """Provides information regarding issues which could be
+        resolved through a application instance restart."""
+
+        # Check if public key is available (especially needed in HSM connection loss scenario)
+        try:
+            key_conf.get_pk()
+            result.public_key_is_available = health.HealthStatus.healthy
+        except Exception:
+            _logger.exception("Cannot get issuing public key.")
+
+        return super()._build_liveness_probe(result, response, config)
+
+    def get_liveness_probe(
+        self,
+        response: Response,
+        config: conf.inject,
+        key_conf: key.inject,
+    ) -> LivelinessHealthResponse:
+        """Determines whether the application instance needs to be restarted."""
+        return self._build_liveness_probe(
+            result=LivelinessHealthResponse(),
+            response=response,
+            config=config,
+            key_conf=key_conf,
         )
 
     def _build_debug_probe(
